@@ -132,6 +132,20 @@ For details decription of the command line options, please run:
 ./bin/ZGen_SR test --help
 ~~~
 
+## Combine N-gram model
+
+If you obtain a large N-gram language model, which can be trained by KenLM tool,
+you can run ZGen in following commands:
+
+~~~{.bash}
+./bin/ZGen_SR test \
+	--type none \
+	--model /path/to/your/model \
+	--ngram /path/to/your/ngram/model \
+	--input /path/to/your/input_file \
+	--posdict /path/to/your/postag_dict
+~~~
+
 ## Author
 
 - Yue Zhang (yue_zhang@sutd.edu.sg) developed the prototype for ZGen best-first
@@ -140,10 +154,12 @@ and transition-based linearizer.
 linearizer and developed the initial version of ZGen:BestFrist linearizer.
 - Yijia Liu (oneplus.lau@gmail.com) refine the transition-based linearizer and
  formalized the codes.
-- Current maintainer for ZGen is Yijia Liu.
+- Jiangming Liu (jmliunlp@gmail.com) combine the N-gram model into the system.
+- Current maintainer for ZGen is Jiangming Liu.
 
 ## Publication
-- Yijia Liu, Yue Zhang, Wanxiang Che, and Ting Liu. 2015. Transition-Based Syntactic Linearization. (To appear) _In Proceedings of NAACL2015_. Denver, Colorado, USA, May.
+- Jiangmign Liu. 2015. An Empirical Comparision between N-gram and Syntax Language Model for Word Ordering. ( to appear) _In Proceedings of EMNLP2015_. Lisbon, Portugal, September.
+- Yijia Liu, Yue Zhang, Wanxiang Che, and Ting Liu. 2015. Transition-Based Syntactic Linearization. _In Proceedings of NAACL2015_. Denver, Colorado, USA, May.
 - Linfeng Song, Yue Zhang, Kai Song and Qun Liu. 2014. Joint Morphological Generation and Syntactic Linearization. _In Proceedings of AAAI 2014_. Quebec City, Canada, July.
 
 ## Development (v0.2.0)

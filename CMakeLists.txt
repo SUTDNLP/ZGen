@@ -114,32 +114,32 @@ target_link_libraries (ZGen_SR
 	boost_unit_test_framework
     pthread)
 
-add_executable (unittest
+#add_executable (unittest
 #    ${SOURCE_DIR}/types/instance.cc
 #    ${SOURCE_DIR}/utils/math_utils.cc
 #    ${SOURCE_DIR}/utils/ioutils.cc
 #    ${SOURCE_DIR}/bestfirst/search/span.cc
 #    ${SOURCE_DIR}/bestfirst/search/span_utils.cc
 #    ${SOURCE_DIR}/bestfirst/search/span_allocator.cc
-    ${SOURCE_DIR}/shiftreduce/types/action.cc
-    ${SOURCE_DIR}/unittest/test.cc
-    ${SOURCE_DIR}/unittest/shiftreduce/test_action.cc
-    ${SOURCE_DIR}/unittest/shiftreduce/test_score.cc
+#    ${SOURCE_DIR}/shiftreduce/types/action.cc
+#    ${SOURCE_DIR}/unittest/test.cc
+#    ${SOURCE_DIR}/unittest/shiftreduce/test_action.cc
+#    ${SOURCE_DIR}/unittest/shiftreduce/test_score.cc
 #    ${SOURCE_DIR}/unittest/bestfirst/test_span_allocator.cc
 #    ${SOURCE_DIR}/unittest/bestfirst/test_span.cc
 #    ${SOURCE_DIR}/unittest/bestfirst/test_span_utils.cc
 #    ${SOURCE_DIR}/unittest/bestfirst/test_span_repr.cc
 #    ${SOURCE_DIR}/unittest/bestfirst/test_span_types.cc
-   )
+#   )
 
-target_link_libraries (unittest
-    boost_program_options
-    boost_log_setup
-    boost_log
-    boost_regex
-    boost_serialization
-    boost_thread
-    boost_system
-    boost_unit_test_framework
-    pthread)
+#target_link_libraries (unittest
+#    boost_program_options
+#    boost_log_setup
+#    boost_log
+#    boost_regex
+#    boost_serialization
+#    boost_thread
+#    boost_system
+#    boost_unit_test_framework
+#    pthread)
 

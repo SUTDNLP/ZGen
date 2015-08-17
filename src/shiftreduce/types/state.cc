@@ -28,8 +28,6 @@ StateItem::clear() {
 
   top0 = -1;
   top1 = -1;
-  top2 = -1;
-  top3 = -1;
   // left_arced.reset();
 
   buffer.set();         // fill all words in buffer
@@ -66,7 +64,7 @@ StateItem::clear() {
 void
 StateItem::copy(const StateItem & other) {
   ref = other.ref;
-  top0 = other.top0; top1 = other.top1; top2 = other.top2; top3 = other.top3;
+  top0 = other.top0; top1 = other.top1; 
   previous = other.previous;
   stack = other.stack;
   word_sequence = other.word_sequence;
@@ -99,8 +97,6 @@ StateItem::shift(postag_t label, word_t word, int index) {
 
   // Push the word onto the stack
   stack.push_back(index);
-  top3 = top2;
-  top2 = top1;
   top1 = top0;
   top0 = index;
 

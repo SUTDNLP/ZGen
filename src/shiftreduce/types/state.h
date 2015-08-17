@@ -51,8 +51,6 @@ public:
 public:
   int top0;   //! The top word in the stack of the current state
   int top1;   //! The second top word.
-  int top2;   //! The third top word.
-  int top3;	  //! The fourth top word.
   const dependency_t* ref;    //! The reference to the sentence
   const StateItem* previous;  //! The previous state
   floatval_t score;           //! The score for the current state
