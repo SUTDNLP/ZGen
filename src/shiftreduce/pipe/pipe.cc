@@ -39,6 +39,7 @@ Pipe::load_model(const std::string& model_path) {
 
   if (opts.ngram_path == "") {
 	_WARN << "Pipe: ngram model doesn't exist.";
+  	model->ngram = NULL;
   }
   else {
 	model->load(opts);
