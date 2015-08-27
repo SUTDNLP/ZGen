@@ -4,7 +4,7 @@
 
 namespace ZGen {
 
-const int kMaxNumberOfWords = 180;
+const int kMaxNumberOfWords = 180*2;
 
 const int kMaxLengthOfBuffer = 2048;
 

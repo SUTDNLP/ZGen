@@ -7,7 +7,7 @@ namespace ShiftReduce {
 
 const int kMaxBeamSize = 128;
 
-const int kMaxSteps = 180* 2;
+const int kMaxSteps = 180* 4;
 
 } //  end for namespace ShiftReduce
 
