@@ -158,7 +158,7 @@ linearizer and developed the initial version of ZGen:BestFrist linearizer.
 - Current maintainer for ZGen is Jiangming Liu.
 
 ## Publication
-- Jiangmign Liu. 2015. An Empirical Comparision between N-gram and Syntax Language Model for Word Ordering. ( to appear) _In Proceedings of EMNLP2015_. Lisbon, Portugal, September.
+- Jiangmign Liu. 2015. An Empirical Comparision between N-gram and Syntax Language Model for Word Ordering. _In Proceedings of EMNLP2015_. Lisbon, Portugal, September.
 - Yijia Liu, Yue Zhang, Wanxiang Che, and Ting Liu. 2015. Transition-Based Syntactic Linearization. _In Proceedings of NAACL2015_. Denver, Colorado, USA, May.
 - Linfeng Song, Yue Zhang, Kai Song and Qun Liu. 2014. Joint Morphological Generation and Syntactic Linearization. _In Proceedings of AAAI 2014_. Quebec City, Canada, July.
 
