@@ -20,7 +20,18 @@ std::ostream& operator << (std::ostream& os, const StateItem& item) {
 bool StateItem::operator < (const StateItem& other) const { return score < other.score; }
 bool StateItem::operator > (const StateItem& other) const { return score > other.score; }
 void StateItem::set_reference(const dependency_t* _ref) { ref = _ref; }
-
+void StateItem::set_graph(const graph_t* _graph){
+	graph = _graph;
+}
+void StateItem::set_forms_alphabet(const Engine::TokenAlphabet* forms_alphabet){
+	this->forms_alphabet = forms_alphabet;
+}
+void StateItem::set_deprels_alphabet(const Engine::TokenAlphabet* deprels_alphabet){
+	this->deprels_alphabet = deprels_alphabet;
+}
+void StateItem::set_pos_alphabet(const Engine::TokenAlphabet* pos_alphabet){
+	this->pos_alphabet = pos_alphabet;
+}
 void
 StateItem::clear() {
   score = 0;
@@ -33,12 +44,14 @@ StateItem::clear() {
   buffer.set();         // fill all words in buffer
   stack.clear();        // clear words in stack
   stack.push_back(-1);  // Push a BEGIN symbol onto the stack.
+  words_shifted.clear();
 
   // Initialize the word sequence and postag sequence.
   word_sequence.clear();
   word_sequence.push_back(Engine::TokenAlphabet::BEGIN);
   postag_sequence.clear();
   postag_sequence.push_back(Engine::TokenAlphabet::BEGIN);
+//  graph->
 
   //
   memset(rank, 0, sizeof(rank));
@@ -69,10 +82,15 @@ StateItem::copy(const StateItem & other) {
   stack = other.stack;
   word_sequence = other.word_sequence;
   postag_sequence = other.postag_sequence;
+  words_shifted = other.words_shifted;
 
   buffer = other.buffer;
   score = other.score;
   last_action = other.last_action;
+  graph = other.graph;
+  forms_alphabet = other.forms_alphabet;
+  deprels_alphabet = other.deprels_alphabet;
+  pos_alphabet = other.pos_alphabet;
   #define _COPY(name) memcpy((name), other.name, sizeof(name));
   _COPY(rank);
   _COPY(postags);
@@ -112,7 +130,7 @@ StateItem::shift(postag_t label, word_t word, int index) {
   buffer.set(index, 0);               // Erase this word.
   rank[index] = word_sequence.size(); //
   postags[index] = label;             // Set up the postag.
-
+  words_shifted.push_back(index);
   return true;
 }
 

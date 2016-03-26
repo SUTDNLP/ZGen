@@ -63,6 +63,9 @@ private:
 
   // Validating the data when dataset and reference set is both loaded.
   bool learn_dataset_and_referset_validation();
+  // Validating the data when dataset and graph set is both loaded.
+  bool learn_dataset_and_graphset_validation();
+
 private:
   const option_t& opts;   /*< The options */
   int timestamp;          //! The timestamp.
@@ -78,6 +81,7 @@ private:
 private:
   std::vector<dependency_t> dataset;
   std::vector<dependency_t> referset;
+  std::vector<graph_t> graphs;
 };
 
 }

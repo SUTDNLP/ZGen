@@ -19,11 +19,12 @@ private:
   typedef std::unordered_map< MetaFeatureType, entry_t, boost::hash<MetaFeatureType> > map_t;
   typedef std::vector<MetaFeatureType> cache_t;
   typedef std::function<void(const ScoreContext&, const Action&, cache_t&)> extractor_t;
-  //typedef std::function<void(const ScoreContext&, const Action&)> extractor_t;
 public:
   ScoreMap(extractor_t _extractor): extractor(_extractor) {
     cache.reserve(128);
   }
+
+
 
   /**
    * Get the score for the (context, action) pair
@@ -36,7 +37,6 @@ public:
    *  @return     floatval_t  The score.
    */
   floatval_t score(const ScoreContext& ctx, const Action& act, bool avg) {
-    // cache_t cache;
     cache.clear();
     extractor(ctx, act, cache);
     floatval_t ret = 0.;
@@ -46,8 +46,13 @@ public:
 
       const entry_t& entry = result1->second;
       typename entry_t::const_iterator result2 = entry.find(act);
+      if(act.name() == Action::kShift){
+    	  Action pos_act = action_t(Action::kShift, ZGen::Engine::TokenAlphabet::BEGIN, ZGen::Engine::TokenAlphabet::BEGIN, -1);
+    	  result2 = entry.find(pos_act);
+      }
+
       if (result2 == entry.end()) { continue; }
-      ret += result2->second.dot(avg);
+    	  ret += result2->second.dot(avg);
     }
     return ret;
   }
@@ -67,19 +72,38 @@ public:
     extractor(ctx, act, cache);
     for (const MetaFeatureType& c: cache) {
       typename map_t::iterator result1 = rep.find(c);
-      if (result1 != rep.end()) {
-        entry_t& entry = result1->second;
-        typename entry_t::iterator result2 = entry.find(act);
-        if (result2 != entry.end()) {
-          param_t& param = result2->second;
-          param.add(now, scale);
-        } else {
-          _TRACE << c << " found, but " << act << " not found.";
-          entry[act] = param_t(scale, scale, now);
-        }
-      } else {
-        rep[c][act] = param_t(scale, scale, now);
-        _TRACE << c << " not found.";
+
+      if(act.name() == Action::kShift){
+      	Action pos_act = action_t(Action::kShift, ZGen::Engine::TokenAlphabet::BEGIN, ZGen::Engine::TokenAlphabet::BEGIN, -1);
+      	if (result1 != rep.end()) {
+			entry_t& entry = result1->second;
+			typename entry_t::iterator result2 = entry.find(pos_act);
+			if (result2 != entry.end()) {
+			  param_t& param = result2->second;
+			  param.add(now, scale);
+			} else {
+			  _TRACE << c << " found, but " << pos_act << " not found.";
+			  entry[pos_act] = param_t(scale, scale, now);
+			}
+		 } else {
+			rep[c][pos_act] = param_t(scale, scale, now);
+			_TRACE << c << " not found.";
+		 }
+      }else{
+		  if (result1 != rep.end()) {
+			entry_t& entry = result1->second;
+			typename entry_t::iterator result2 = entry.find(act);
+			if (result2 != entry.end()) {
+			  param_t& param = result2->second;
+			  param.add(now, scale);
+			} else {
+			  _TRACE << c << " found, but " << act << " not found.";
+			  entry[act] = param_t(scale, scale, now);
+			}
+		  } else {
+			rep[c][act] = param_t(scale, scale, now);
+			_TRACE << c << " not found.";
+		  }
       }
 
       if (rep.find(c) == rep.end()) {

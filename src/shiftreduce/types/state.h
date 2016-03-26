@@ -7,6 +7,8 @@
 #include "settings.h"
 #include "shiftreduce/settings.h"
 #include "shiftreduce/types/action.h"
+#include "types/graph.h"
+#include "engine/token_alphabet.h"
 //ljm
 //{
 #include "shiftreduce/ngram/lm/model.hh"
@@ -30,6 +32,14 @@ public:
    *  @param[in] _ref   The pointer to the sentence
    */
   void set_reference(const dependency_t* _ref);
+
+  void set_graph(const graph_t* graph);
+
+  void set_forms_alphabet(const Engine::TokenAlphabet* forms_alphabet);
+
+  void set_deprels_alphabet(const Engine::TokenAlphabet* deprels_alphabet);
+
+  void set_pos_alphabet(const Engine::TokenAlphabet* pos_alphabet);
 
   /**
    * Clear the state item.
@@ -71,7 +81,11 @@ public:
   int left_2nd_most_child[kMaxNumberOfWords]; //! CACHE: use to store the 2nd-left-most child.
   int right_2nd_most_child[kMaxNumberOfWords];//! CACHE: use to store the 2nd-right-most child.
   action_t last_action;                       //! The action that result in the current state.
-  
+  const graph_t* graph;
+  std::vector<int> words_shifted;
+  const Engine::TokenAlphabet* forms_alphabet;
+  const Engine::TokenAlphabet* deprels_alphabet;
+  const Engine::TokenAlphabet* pos_alphabet;
   //ljm
   //{
   lm::ngram::ProbingModel::State ngstate;

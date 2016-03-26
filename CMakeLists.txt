@@ -53,6 +53,7 @@ add_executable (ZGen_SR
     ${SOURCE_DIR}/engine/token_alphabet.cc
     ${SOURCE_DIR}/shiftreduce/types/action.cc
     ${SOURCE_DIR}/shiftreduce/types/state.cc
+    ${SOURCE_DIR}/types/graph.cc
     ${SOURCE_DIR}/shiftreduce/types/action_utils.cc
     ${SOURCE_DIR}/shiftreduce/model/model.cc
 	${SOURCE_DIR}/shiftreduce/ngram/ngram.cc

@@ -122,14 +122,32 @@ Pipe::learn_dataset_and_referset_validation() {
 }
 
 bool
+Pipe::learn_dataset_and_graphset_validation() {
+  auto nr_graphs = graphs.size();
+  auto nr_data = dataset.size();
+
+  if (nr_graphs <= 0) {
+    _ERROR << "Pipe: graphs dataset should not be empty.";
+    return false;
+  }
+
+  if (nr_data != nr_graphs) {
+    _ERROR << "Pipe: #(input) not equal #(graph)";
+    return false;
+  }
+  return true;
+}
+
+bool
 Pipe::realize() {
   namespace ioutils = ZGen::IO;
 
   // Read input data.
   std::istream* is = ioutils::get_istream(opts.input_path);
+  bool is_inp_dep = true;
   int nr_data = ioutils::read_dependency_dataset((*is),
       forms_alphabet, postags_alphabet, deprels_alphabet,
-      dataset);
+      dataset, is_inp_dep, graphs );
 
   _INFO << "Pipe: " << nr_data << " input instance(s) is loaded.";
   if (nr_data <= 0) {
@@ -146,10 +164,10 @@ Pipe::realize() {
     }
 
     // Load reference dataset.
-    ioutils::read_dependency_dataset(rfs, forms_alphabet, postags_alphabet,
-        deprels_alphabet, referset);
+    int nr_ref_data = ioutils::read_dependency_dataset(rfs, forms_alphabet, postags_alphabet,
+        deprels_alphabet, referset, !is_inp_dep, graphs);
 
-    _INFO << "Pipe(report): " << nr_data << " reference instance(s) is loaded.";
+    _INFO << "Pipe(report): " << nr_ref_data << " reference instance(s) is loaded now.";
 
     // Validation check.
     if (!learn_dataset_and_referset_validation()) {
@@ -178,12 +196,15 @@ Pipe::realize() {
     exit(1);
   }
   learner = (opts.learn ? new Learner(opts, model, ctx) : NULL);
+  decoder->set_pos_alphabet(&postags_alphabet);
+  decoder->set_deprels_alphabet(&deprels_alphabet);
 
 
   _INFO << "Pipe(report): found " << forms_alphabet.size()   << " forms.";
   _INFO << "Pipe(report): found " << postags_alphabet.size() << " postags.";
   if (opts.output_label) { _INFO << "Pipe: found " << deprels_alphabet.size() << " deprels."; }
   _INFO << "Pipe(report): labeled = " << (opts.output_label ? "True.": "False.");
+  _INFO << "Pipe(report): lookahead feat = " << (opts.lookahead ? "True.": "False.");
 
   // Open output data.
   std::ostream* os = (opts.learn ? NULL: ioutils::get_ostream(opts.output_path));
@@ -194,6 +215,8 @@ Pipe::realize() {
     action_sequence_t gold_actions;
     std::vector<int> order;
     const dependency_t* instance = &dataset[i];
+    const graph_t* graph = &graphs[i];
+    graph_t shuffled_graph;
     dependency_t shuffled_instance;
     dependency_t output;
 
@@ -202,11 +225,13 @@ Pipe::realize() {
       for (const Action& a: gold_actions) { _TRACE << "Pipe(gold action): " << a; }
     } else if (opts.shuffle_instance) {
       // For the TEST phase, should shuffle the items in an instance.
-      InstanceUtils::shuffle_instance((*instance), shuffled_instance, order);
+      InstanceUtils::shuffle_instance((*instance), shuffled_instance, order, (*graph), shuffled_graph);
+
       instance = (&shuffled_instance);
+      graph = (&shuffled_graph);
     }
 
-    Decoder::decode_result_t result = decoder->decode(instance, gold_actions);
+    Decoder::decode_result_t result = decoder->decode(instance, gold_actions, graph);
 
     if (opts.learn) {
       learner->set_timestamp(i+ 1);

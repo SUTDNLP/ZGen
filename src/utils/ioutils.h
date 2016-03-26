@@ -4,7 +4,10 @@
 #include <iostream>
 #include <vector>
 #include "types/instance.h"
+#include "types/graph.h"
 #include "engine/token_alphabet.h"
+#include <map>
+#include <unordered_map>
 
 namespace ZGen {
 namespace IO {
@@ -53,7 +56,7 @@ int read_dependency_dataset(std::istream& is,
     Engine::TokenAlphabet& forms_alphabet,
     Engine::TokenAlphabet& postags_alphabet,
     Engine::TokenAlphabet& deprels_alphabet,
-    std::vector<dependency_t>& dataset);
+    std::vector<dependency_t>& dataset, bool is_dep_input, std::vector<graph_t> &graphs);
 
 /**
  * Read one instannce from the input stream.
@@ -69,7 +72,7 @@ int read_dependency_instance(std::istream& is,
     Engine::TokenAlphabet& forms_alphabet,
     Engine::TokenAlphabet& postags_alphabet,
     Engine::TokenAlphabet& deprels_alphabet,
-    dependency_t& parse);
+    dependency_t& parse, bool is_dep_input, graph_t &graph);
 
 void write_dependency_instance(std::ostream& os,
     const Engine::TokenAlphabet& forms_alphabet,

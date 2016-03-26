@@ -39,6 +39,8 @@ int test(int argc, char* argv[]) {
     ("display", po::value<int>(), "The display interval.")
     ("beam", po::value<int>(), "The size for beam.")
     ("verbose", "Logging every detail.")
+	("mode",po::value<int>(), "mode used for trying different configurations")
+	("lookahead", "Specify to enable lookahead features [default = false]")
     ;
 
   po::variables_map vm;
@@ -95,6 +97,8 @@ int learn(int argc, char* argv[]) {
     ("beam", po::value<int>(), "The size for beam [default=64].")
     ("labeled", "Specify to output labeled linearization [default=false].")
     ("verbose", "Logging every detail.")
+	("mode",po::value<int>(), "mode used for trying different configurations")
+	("lookahead", "Specify to enable lookahead features [default = false]")
     ;
 
   po::variables_map vm;

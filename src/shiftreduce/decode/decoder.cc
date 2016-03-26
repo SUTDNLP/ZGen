@@ -56,8 +56,9 @@ Decoder::score_possible_actions(const StateItem& from) {
   packed_score.clear();
   ScoreContext ctx(from);
   for (const Action& act: possible_actions) {
+	ctx.load_generic_actions(from,act);
 	lm::ngram::ProbingModel::State out;
-    packed_score[act] = model->score(from, act, !opts.learn, out, forms_alphabet);
+    packed_score[act] = model->score(ctx, from, act, !opts.learn, out, forms_alphabet);
 	if (act.name() == Action::kShift) {
 		packed_ngstate[act] = out;
 	}
@@ -173,13 +174,18 @@ Decoder::search_best_state(const StateItem* begin, const StateItem* end) {
 
 Decoder::decode_result_t
 Decoder::decode(const dependency_t* input,
-    const action_sequence_t& gold_actions) {
+    const action_sequence_t& gold_actions, const graph_t* graph ) {
   config_input(input);
 
   ctx->lattice[0].clear();
   if(model->ngram != NULL)
 	ctx->lattice[0].ngstate = (model->ngram)->BeginSentenceState();
   ctx->lattice[0].set_reference(input);
+  ctx->lattice[0].set_graph(graph);
+  ctx->lattice[0].set_forms_alphabet(&forms_alphabet);
+  ctx->lattice[0].set_deprels_alphabet(deprels_alphabet);
+  ctx->lattice[0].set_pos_alphabet(pos_alphabet);
+//  ctx->lattice[0].set_forms_alphabet(&pos_alphabet);
   ctx->lattice_index[0] = ctx->lattice;
   ctx->lattice_index[1] = ctx->lattice+ 1;
   const StateItem* correct_state = NULL;
@@ -211,7 +217,7 @@ Decoder::decode(const dependency_t* input,
       const scored_transition_t& tran = candidate_transitions[i];
       _TRACE << "Decoder(transit): " << (void*)(tran.get<0>())
         << "->" << (void*)(ctx->lattice_index[step]+ i)
-        << " by " << tran.get<1>() << ",s=" << tran.get<2>();
+        << " by " << tran.get<1>() <<" word "<< this->forms_alphabet.decode(tran.get<1>().word)<< ",s=" << tran.get<2>() ;
       transit((*tran.get<0>()), tran.get<1>(), tran.get<2>(),
           (ctx->lattice_index[step]+ i));
     }
@@ -238,5 +244,14 @@ Decoder::decode(const dependency_t* input,
   return std::make_pair(best_to, correct_state);
 }
 
+/*void Decoder::set_forms_alphabet(Engine::TokenAlphabet forms_alphabet){
+	this->forms_alphabet = forms_alphabet;
+}*/
+void Decoder::set_pos_alphabet(Engine::TokenAlphabet* pos_alphabet){
+	this->pos_alphabet = pos_alphabet;
+}
+void Decoder::set_deprels_alphabet(Engine::TokenAlphabet* deprels_alphabet){
+	this->deprels_alphabet = deprels_alphabet;
+}
 } //  end for namespace ShiftReduce
 } //  end for namespace ZGen

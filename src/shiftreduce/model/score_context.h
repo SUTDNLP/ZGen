@@ -1,9 +1,16 @@
 #ifndef __ZGEN_SHIFTREDUCE_MODEL_SCORE_CONTEXT_H__
 #define __ZGEN_SHIFTREDUCE_MODEL_SCORE_CONTEXT_H__
 
+#include <iterator>
+#include <algorithm>
+#include <vector>
 #include "engine/token_alphabet.h"
 #include "shiftreduce/types/state.h"
+#include "types/instance.h"
+#include "shiftreduce/types/internal_types.h"
 #include "utils/math_utils.h"   //  for bin
+#include <unordered_set>
+#include <boost/algorithm/string.hpp>
 
 #define _LEGEAL_RANGE_(x) (((x) >= 0) && ((x) < N))
 
@@ -34,6 +41,30 @@
 } while (0);
 
 
+#define __SET_LABEL_POS_SHIFTED(prefix, position) do {\
+if(position>=0 && item.graph->prefix##_map.count(position) >0){	\
+	prefix##_##position##_shifted = 0; \
+	prefix##_##position##_not_shifted = 0; \
+	prefix##_##position##_pos_shifted = 0; \
+	prefix##_##position##_pos_not_shifted = 0; \
+	int prime = 31; \
+	std::vector<std::pair<int,int>> prefix##s = item.graph->prefix##_map.at(position); \
+	std::vector<int> prefix##_shifted_pos_list;\
+	std::vector<int> prefix##_not_shifted_pos_list;\
+	for(auto elem:prefix##s){	\
+		if(item.buffer.test(elem.first)){\
+			prefix##_##position##_not_shifted = prime* prefix##_##position##_not_shifted + elem.second;	\
+			prefix##_not_shifted_pos_list.push_back(item.ref->postag(elem.first)); \
+		}else{\
+			prefix##_##position##_shifted = prime* prefix##_##position##_shifted + elem.second;\
+			prefix##_shifted_pos_list.push_back(item.ref->postag(elem.first)); \
+		}	\
+	}\
+	prefix##_##position##_pos_shifted = add_word_pos_feature(&prefix##_shifted_pos_list);\
+	prefix##_##position##_pos_not_shifted = add_word_pos_feature(&prefix##_not_shifted_pos_list);\
+	}\
+} while(0);
+
 namespace ZGen {
 
 namespace ShiftReduce {
@@ -46,6 +77,61 @@ const int kNonePostag = eg::TokenAlphabet::NONE;
 const int kNoneDeprel = eg::TokenAlphabet::NONE;
 
 struct ScoreContext {
+	void load_generic_actions(const StateItem& item, action_t action){
+		parent_bw0_shifted = 0;
+		parent_bw0_label = 0;
+		children_bw0_shifted = 0;
+		children_bw0_not_shifted = 0;
+		children_bw0_pos_shifted = 0;
+		children_bw0_pos_not_shifted = 0;
+		sibling_bw0_shifted = 0;
+		sibling_bw0_not_shifted = 0;
+		buffer_word = 0;
+		buffer_pos = 0;
+		parent_bw0_pos = 0;
+		parent_bw0_word = 0;
+		sibling_bw0_pos_shifted = 0;
+		sibling_bw0_pos_not_shifted = 0;
+
+		int S0 = item.top0;
+		int S1 = item.top1;
+
+
+		if(action.name()==Action::kShift){
+			int bw0 =  action.index;
+			buffer_word = item.ref->form(bw0);
+			buffer_pos = item.ref->postags.at(bw0);
+
+			parent_bw0_shifted = 0;
+			int parent = item.graph->parent_map.at(bw0).first;
+			if(parent != -1){
+				parent_bw0_shifted = 1;
+				if(item.buffer.test(parent)){		//parent not shifted
+					parent_bw0_shifted = 2;
+				}
+			}
+
+			if(parent != -1){
+				parent_bw0_pos = item.ref->postags.at(parent);
+				parent_bw0_word = item.ref->forms.at(parent);
+			}
+
+			parent_bw0_label = item.graph->parent_map.at(bw0).second;
+
+			__SET_LABEL_POS_SHIFTED(children, bw0);
+			__SET_LABEL_POS_SHIFTED(sibling, bw0);
+		}
+	}
+
+	int add_word_pos_feature(std::vector<int>* entry_list){
+		int prime = 31;
+		int feature_value = 0;
+		std::sort(entry_list->begin(),entry_list->end());
+		for(auto elem:*entry_list){
+			feature_value = prime* feature_value + elem;
+		}
+		return feature_value;
+	}
   ScoreContext(const StateItem& item)
     :_is_begin_state(false),
     _has_S1(false),  _has_W1(false), _has_W2(false), 
@@ -63,7 +149,8 @@ struct ScoreContext {
     W0(0), W1(0), W2(0),
     P0(0), P1(0), P2(0), 
     S0S1Dist(0), 
-    S0S0ldDist(0), S0S0rdDist(0), S1S1ldDist(0), S1S1rdDist(0), LM1(0), LM2(0), LM3(0), LM4(0){
+    S0S0ldDist(0), S0S0rdDist(0), S1S1ldDist(0), S1S1rdDist(0), LM1(0), LM2(0), LM3(0), LM4(0),
+	parent_S0_shifted(0), parent_S0_label(0), parent_S0_pos(0), parent_S0_word(0){
     int N = item.ref->size();
     int S0 = item.top0;
 
@@ -235,6 +322,25 @@ struct ScoreContext {
       W1 = (W2 = kNoneWord);
       P1 = (P2 = kNonePostag);
     } 
+
+    if(S0>=0){
+		__SET_LABEL_POS_SHIFTED(children, S0);
+		__SET_LABEL_POS_SHIFTED(sibling, S0);
+		parent_S0_shifted = 0;
+		int parent = item.graph->parent_map.at(S0).first;
+		if(parent != -1){
+			parent_S0_shifted = 1;
+			if(item.buffer.test(parent)){		//parent not shifted
+				parent_S0_shifted = 2;
+			}
+		}
+		if(parent != -1){
+			parent_S0_pos = item.ref->postags.at(parent);
+			parent_S0_word = item.ref->form(parent);
+		}
+
+		parent_S0_label = item.graph->parent_map.at(S0).second;
+    }
   } 
 
   bool is_begin_state() const {
@@ -276,6 +382,39 @@ struct ScoreContext {
   int       S0S0ldDist, S0S0rdDist, S1S1ldDist, S1S1rdDist;
 
   int 		LM1, LM2, LM3, LM4;
+
+  int children_bw0_not_shifted = 0;
+  int children_bw0_shifted = 0;
+  int children_bw0_pos_shifted = 0;
+  int children_bw0_pos_not_shifted = 0;
+  int sibling_bw0_shifted = 0;
+  int sibling_bw0_not_shifted = 0;
+  int sibling_bw0_pos_shifted = 0;
+  int sibling_bw0_pos_not_shifted = 0;
+  int buffer_word = 0;
+  int buffer_pos = 0;
+
+  int parent_bw0_word = 0;
+  int parent_S0_word = 0;
+
+  int parent_bw0_shifted = 0;
+  int parent_S0_shifted = 0;
+
+  int parent_bw0_label = 0;
+  int parent_bw0_pos = 0;
+  int parent_S0_pos =0;
+  int parent_S0_label = 0;
+
+  int children_S0_not_shifted = 0;
+  int children_S0_shifted = 0;
+  int children_S0_pos_shifted = 0;
+  int children_S0_pos_not_shifted = 0;
+  int sibling_S0_shifted = 0;
+  int sibling_S0_not_shifted = 0;
+  int sibling_S0_pos_shifted = 0;
+  int sibling_S0_pos_not_shifted = 0;
+
+
 };
 
 typedef ScoreContext ctx_t;

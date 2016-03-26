@@ -46,7 +46,11 @@ public:
    *  @return     decode_result_t The decode result.
    */
   decode_result_t decode(const dependency_t* input,
-      const action_sequence_t& gold_actions);
+      const action_sequence_t& gold_actions, const graph_t* graph );
+
+  void set_pos_alphabet(Engine::TokenAlphabet* pos_alphabet);
+
+  void set_deprels_alphabet(Engine::TokenAlphabet* deprels_alphabet);
 
 protected:
   /**
@@ -81,6 +85,8 @@ protected:
   DecodeContext* ctx;     //! The decode context.
   packed_ngstate_t packed_ngstate;
   const Engine::TokenAlphabet& forms_alphabet;
+  const Engine::TokenAlphabet* deprels_alphabet;
+  const Engine::TokenAlphabet* pos_alphabet;
   //! The cached possible actions.
   action_sequence_t possible_actions;
   //! The cached packed score for transition.

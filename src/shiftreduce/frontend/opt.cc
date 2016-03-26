@@ -94,6 +94,17 @@ bool parse_options(bool learn,
   opts.display_interval = 1000;
   if (vm.count("display")) { opts.display_interval = vm["display"].as<int>(); }
 
+  if(vm.count("mode")){
+	  opts.mode = vm["mode"].as<int>();
+  }/*else{
+	  _WARN << "mode is to be set for trying different configuration";
+  }*/
+
+  if(vm.count("lookahead")){
+	  opts.lookahead = true;
+  }else{
+	  opts.lookahead = false;
+  }
   return true;
 }
 

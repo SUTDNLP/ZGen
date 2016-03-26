@@ -7,7 +7,7 @@ namespace ZGen {
 void
 InstanceUtils::shuffle_instance(const dependency_t & instance,
     dependency_t & shuffled_instance,
-    std::vector<int> & order) {
+    std::vector<int> & order, const graph_t & graph, graph_t & shuffled_graph) {
   int N = instance.forms.size();
   order.clear();
   for (int i = 0; i < N; ++ i) {
@@ -31,6 +31,41 @@ InstanceUtils::shuffle_instance(const dependency_t & instance,
 
   if (N == instance.extras.size()) {
     shuffled_instance.extras.resize(N);
+  }
+  std::map<int,int> order_map;
+  int loop_counter=0;
+  for(auto elem: order){
+	  order_map[loop_counter++]=elem;
+  }
+  for(auto elem : graph.parent_map)
+  {
+	 std::pair<int,int> parent;
+	 if(order_map.count(elem.second.first)==0){
+		 parent = std::make_pair(-1, elem.second.second);
+	 }else{
+		 parent = std::make_pair(order_map[elem.second.first], elem.second.second);
+	 }
+	 shuffled_graph.parent_map[order_map[elem.first]]= parent;
+  }
+
+  for(auto elem:graph.children_map){
+	  std::vector<std::pair<int,int>> children;
+	  for(auto elem2:elem.second){
+		  children.push_back(std::make_pair(order_map[elem2.first],elem2.second));
+	  }
+	  if(order_map.count(elem.first)==0){
+		  shuffled_graph.children_map[-1]=children;
+	  }else{
+		  shuffled_graph.children_map[order_map[elem.first]]= children;
+	  }
+  }
+
+  for(auto elem:graph.sibling_map){
+	  std::vector<std::pair<int,int>> siblings;
+	  for(auto elem2: elem.second){
+		  siblings.push_back(std::make_pair(order_map[elem2.first],elem2.second));
+	  }
+	  shuffled_graph.sibling_map[order_map[elem.first]] = siblings;
   }
 
   for (int i = 0; i < N; ++ i) {

@@ -6,6 +6,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include "utils/ioutils.h"
 #include "utils/logging.h"
+#include <map>
+#include <unordered_map>
 
 namespace ZGen {
 
@@ -69,7 +71,7 @@ read_dependency_dataset(std::istream& is,
     eg::TokenAlphabet& forms_alphabet,
     eg::TokenAlphabet& postags_alphabet,
     eg::TokenAlphabet& deprels_alphabet,
-    std::vector<dependency_t>& data) {
+    std::vector<dependency_t>& data, bool is_dep_input, std::vector<graph_t> &graphs) {
   data.clear();
   std::string data_context((std::istreambuf_iterator<char>(is)),
       std::istreambuf_iterator<char>());
@@ -83,8 +85,14 @@ read_dependency_dataset(std::istream& is,
   while (instance != eos) {
     std::istringstream iss(*instance);
     dependency_t parse;
+   	graph_t graph;
     read_dependency_instance(iss, forms_alphabet,
-        postags_alphabet, deprels_alphabet, parse);
+        postags_alphabet, deprels_alphabet, parse, is_dep_input, graph);
+	if(is_dep_input){
+//		graph.bfs(&deprels_alphabet);
+		graph.add_ancestors();
+		graphs.push_back(graph);
+	}        
     data.push_back(parse);
     instance ++;
   }
@@ -97,8 +105,9 @@ read_dependency_instance(std::istream& is,
     Engine::TokenAlphabet& forms_alphabet,
     Engine::TokenAlphabet& postags_alphabet,
     Engine::TokenAlphabet& deprels_alphabet,
-    dependency_t& parse) {
+    dependency_t& parse, bool is_dep_input, graph_t &graph) {
   std::string line;
+  int line_no = 0;
   while (std::getline(is, line)) {
     algo::trim(line);
     if (line.size() == 0) { break; }
@@ -152,6 +161,9 @@ read_dependency_instance(std::istream& is,
       // Handle the instance with extra information.
       parse.push_back(form, postag, atoi(items[2].c_str()),
           deprel, extended_words, phrase, is_phrase, items[4]);
+    }
+    if(is_dep_input){
+    	graph.add_to_parent_map(line_no++,atoi(items[2].c_str()),deprel);
     }
   }
 }

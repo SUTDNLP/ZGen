@@ -85,9 +85,35 @@ protected:
   boost::tuples::tuple<int, int, int> rep;
 };
 
+// Fourgram
+struct FourgramMetaFeature: public AbstractMetaFeature {
+public:
+  FourgramMetaFeature(): rep(0, 0, 0, 0) {}
+  FourgramMetaFeature(int f0, int f1, int f2, int f3): rep(f0, f1, f2, f3) {
+    boost::hash_combine(seed, f0);
+    boost::hash_combine(seed, f1);
+    boost::hash_combine(seed, f2);
+    boost::hash_combine(seed, f3);
+  }
+
+  bool operator == (const FourgramMetaFeature& a) const { return rep == a.rep; }
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned version) {
+    ar & seed & rep.get<0>() & rep.get<1>() & rep.get<2>() & rep.get<3>();
+  }
+
+  friend std::ostream & operator << (std::ostream& os, const FourgramMetaFeature& s) {
+    os << s.rep << "-" << s.seed;  return os;
+  }
+protected:
+  boost::tuples::tuple<int, int, int, int> rep;
+};
+
 typedef UnigramMetaFeature  us_t;
 typedef BigramMetaFeature   bs_t;
 typedef TrigramMetaFeature  ts_t;
+typedef FourgramMetaFeature fos_t;
 
 } //  namespace shiftreduce
 } //  namespace zgen
