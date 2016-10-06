@@ -219,7 +219,7 @@ Model::Model(const option_t& opts) {
   foscore_repo.reserve(80);
   _INFO<<"Experiment 22-3.1 - All feat with S0 lookahead feat";
 //  _INFO<<"mode "<<opts.mode;
-  int mode = opts.mode;
+//  int mode = opts.mode;
   standard_features(opts);
 
 	add_unigram_feature(false, buffer_pos);

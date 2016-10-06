@@ -33,7 +33,7 @@ struct Option {
   bool output_label;            //! Specify whether output labels.
   bool shuffle_instance;        //!
   bool verbose;                 //! Specify verbose logging.
-  int mode;
+  //int mode;
   bool lookahead;
 
   //ljm
