@@ -132,6 +132,8 @@ For details decription of the command line options, please run:
 ./bin/ZGen_SR test --help
 ~~~
 
+Sample scripts to train and test ZGen are available at /run/train-unlabeled-nopos-nodep.sh
+
 ## Combine N-gram model
 
 If you obtain a large N-gram language model, which can be trained by KenLM tool,
