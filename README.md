@@ -157,11 +157,12 @@ linearizer and developed the initial version of ZGen:BestFrist linearizer.
 - Yijia Liu (oneplus.lau@gmail.com) refine the transition-based linearizer and
  formalized the codes.
 - Jiangming Liu (jmliunlp@gmail.com) combine the N-gram model into the system.
-- Ratish Puduppully(ratish.surendran@research.iiit.ac.in) added lookahead features.
+- Ratish Puduppully(ratish.surendran@research.iiit.ac.in) added lookahead features and implemented Deep Input Linearization
 - Current maintainers for ZGen are Jiangming Liu and Ratish Puduppully.
 
 ## Publication
-- Ratish Puduppully, Yue Zhang and Manish Shrivastava. 2016. Transition-Based Syntactic Linearization with Lookahead Features. _In Proceedings of NAACL 2016 (To Appear)_. San Diego, USA, June.
+- Ratish Puduppully, Yue Zhang and Manish Shrivastava. 2017. Transition-Based Deep Input Linearization. _In Proceedings of EACL 2017 (To Appear)_. valencia, Spain, April.
+- Ratish Puduppully, Yue Zhang and Manish Shrivastava. 2016. Transition-Based Syntactic Linearization with Lookahead Features. _In Proceedings of NAACL 2016_. San Diego, USA, June.
 - Jiangmign Liu. 2015. An Empirical Comparision between N-gram and Syntax Language Model for Word Ordering. _In Proceedings of EMNLP2015_. Lisbon, Portugal, September.
 - Yijia Liu, Yue Zhang, Wanxiang Che, and Ting Liu. 2015. Transition-Based Syntactic Linearization. _In Proceedings of NAACL2015_. Denver, Colorado, USA, May.
 - Linfeng Song, Yue Zhang, Kai Song and Qun Liu. 2014. Joint Morphological Generation and Syntactic Linearization. _In Proceedings of AAAI 2014_. Quebec City, Canada, July.
