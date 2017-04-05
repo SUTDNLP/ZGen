@@ -31,15 +31,21 @@ int test(int argc, char* argv[]) {
                         " - partial: Partial tree constrain\n"
                         " - full: Full tree constrain.")
     ("input", po::value<std::string>(), "The path to the input file.")
+	("reference", po::value<std::string>(), "The path to the reference file.")
     ("output", po::value<std::string>(), "The path to the output file.")
+	("graph", po::value<std::string>(), "The path to the graph file")
     ("posdict", po::value<std::string>(), "The path to the postag dict [optional]\n"
                         "The postag dict is optional but it's highly "
-                        "recommanded inorder to shrink the search space.")
+                        "recommended inorder to shrink the search space.")
+	("most_frequent_posdict", po::value<std::string>(), "The path to the most frequent postag dict [optional]\n"
+						"The most frequent postag dict is optional but it's highly "
+						"recommended inorder for the lookahead feature for pos of parent/sibling/children")
     ("labeled", "Specify to output labeled linearization [default=false].")
     ("display", po::value<int>(), "The display interval.")
     ("beam", po::value<int>(), "The size for beam.")
     ("verbose", "Logging every detail.")
-	("lookahead", "Specify to enable lookahead features [default = false]")
+	("mapping", po::value<std::string>(), "The path to the mapping file")
+	("previous_words_that_path", po::value<std::string>(), "The path to the previous words file")
     ;
 
   po::variables_map vm;
@@ -89,14 +95,19 @@ int learn(int argc, char* argv[]) {
                         " - full: Full tree constrain.")
     ("reference", po::value<std::string>(), "The path to the reference file.")
     ("input", po::value<std::string>(), "The path to the input file.")
+	("graph", po::value<std::string>(), "The path to the graph file")
     ("posdict", po::value<std::string>(), "The path to the postag dict [optional]\n"
                         "The postag dict is optional but it's highly "
-                        "recommanded inorder to shrink the search space.")
+                        "recommended inorder to shrink the search space.")
+	("most_frequent_posdict", po::value<std::string>(), "The path to the most frequent postag dict [optional]\n"
+						"The most frequent postag dict is optional but it's highly "
+						"recommended inorder for the lookahead feature for pos of parent/sibling/children")
     ("display", po::value<int>(), "The display interval [default=1000].")
     ("beam", po::value<int>(), "The size for beam [default=64].")
     ("labeled", "Specify to output labeled linearization [default=false].")
     ("verbose", "Logging every detail.")
-	("lookahead", "Specify to enable lookahead features [default = false]")
+	("mapping", po::value<std::string>(), "The path to the mapping file")
+	("previous_words_that_path", po::value<std::string>(), "The path to the previous words file")
     ;
 
   po::variables_map vm;

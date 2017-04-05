@@ -11,6 +11,8 @@
 namespace ZGen {
 namespace ShiftReduce {
 
+extern float lambda;
+
 template<class MetaFeatureType>
 class ScoreMap {
 private:
@@ -19,23 +21,17 @@ private:
   typedef std::unordered_map< MetaFeatureType, entry_t, boost::hash<MetaFeatureType> > map_t;
   typedef std::vector<MetaFeatureType> cache_t;
   typedef std::function<void(const ScoreContext&, const Action&, cache_t&)> extractor_t;
+  Action pos_act = action_t(Action::kShift, ZGen::Engine::TokenAlphabet::BEGIN, ZGen::Engine::TokenAlphabet::BEGIN, -1);
 public:
   ScoreMap(extractor_t _extractor): extractor(_extractor) {
-    cache.reserve(128);
+      cache.reserve(128);
   }
 
+  ScoreMap(extractor_t _extractor, bool _track): extractor(_extractor) {
+    cache.reserve(128);
+    track = _track;
+  }
 
-
-  /**
-   * Get the score for the (context, action) pair
-   *
-   *  @param[in]  ctx   The scoring context.
-   *  @param[in]  act   The action.
-   *  @param[in]  avg   If avg is true return the averaged parameter, else
-   *                    return the non-averaged parameter.
-   *  @param[in]  default_return_value  The default return value.
-   *  @return     floatval_t  The score.
-   */
   floatval_t score(const ScoreContext& ctx, const Action& act, bool avg) {
     cache.clear();
     extractor(ctx, act, cache);
@@ -45,10 +41,11 @@ public:
       if (result1 == rep.end()) { continue; }
 
       const entry_t& entry = result1->second;
-      typename entry_t::const_iterator result2 = entry.find(act);
+      typename entry_t::const_iterator result2;
       if(act.name() == Action::kShift){
-    	  Action pos_act = action_t(Action::kShift, ZGen::Engine::TokenAlphabet::BEGIN, ZGen::Engine::TokenAlphabet::BEGIN, -1);
     	  result2 = entry.find(pos_act);
+      }else{
+    	  result2 = entry.find(act);
       }
 
       if (result2 == entry.end()) { continue; }
@@ -57,60 +54,51 @@ public:
     return ret;
   }
 
-  /**
-   * Update the parameter for the (context, action) pair
-   *
-   *  @param[in]  ctx   The scoring context.
-   *  @param[in]  act   The action
-   *  @param[in]  now   The current timestamp.
-   *  @param[in]  scale The updated scale.
-   */
   void update(const ScoreContext& ctx, const Action& act,
-      int now, const floatval_t& scale = 1.) {
-    // cache_t cache;
-    cache.clear();
-    extractor(ctx, act, cache);
-    for (const MetaFeatureType& c: cache) {
-      typename map_t::iterator result1 = rep.find(c);
+       int now, const floatval_t& scale = 1.) {
+     // cache_t cache;
+     cache.clear();
+     extractor(ctx, act, cache);
+     for (const MetaFeatureType& c: cache) {
+       typename map_t::iterator result1 = rep.find(c);
 
-      if(act.name() == Action::kShift){
-      	Action pos_act = action_t(Action::kShift, ZGen::Engine::TokenAlphabet::BEGIN, ZGen::Engine::TokenAlphabet::BEGIN, -1);
-      	if (result1 != rep.end()) {
-			entry_t& entry = result1->second;
-			typename entry_t::iterator result2 = entry.find(pos_act);
-			if (result2 != entry.end()) {
-			  param_t& param = result2->second;
-			  param.add(now, scale);
-			} else {
-			  _TRACE << c << " found, but " << pos_act << " not found.";
-			  entry[pos_act] = param_t(scale, scale, now);
-			}
-		 } else {
-			rep[c][pos_act] = param_t(scale, scale, now);
-			_TRACE << c << " not found.";
-		 }
-      }else{
-		  if (result1 != rep.end()) {
-			entry_t& entry = result1->second;
-			typename entry_t::iterator result2 = entry.find(act);
-			if (result2 != entry.end()) {
-			  param_t& param = result2->second;
-			  param.add(now, scale);
-			} else {
-			  _TRACE << c << " found, but " << act << " not found.";
-			  entry[act] = param_t(scale, scale, now);
-			}
-		  } else {
-			rep[c][act] = param_t(scale, scale, now);
-			_TRACE << c << " not found.";
-		  }
-      }
+       if(act.name() == Action::kShift){
+       	if (result1 != rep.end()) {
+ 			entry_t& entry = result1->second;
+ 			typename entry_t::iterator result2 = entry.find(pos_act);
+ 			if (result2 != entry.end()) {
+ 			  param_t& param = result2->second;
+ 			  param.add(now, scale);
+ 			} else {
+ 			  _TRACE << c << " found, but " << pos_act << " not found.";
+ 			  entry[pos_act] = param_t(scale, scale, now);
+ 			}
+ 		 } else {
+ 			rep[c][pos_act] = param_t(scale, scale, now);
+ 			_TRACE << c << " not found.";
+ 		 }
+       }else{
+ 		  if (result1 != rep.end()) {
+ 			entry_t& entry = result1->second;
+ 			typename entry_t::iterator result2 = entry.find(act);
+ 			if (result2 != entry.end()) {
+ 			  param_t& param = result2->second;
+ 			  param.add(now, scale);
+ 			} else {
+ 			  _TRACE << c << " found, but " << act << " not found.";
+ 			  entry[act] = param_t(scale, scale, now);
+ 			}
+ 		  } else {
+ 			rep[c][act] = param_t(scale, scale, now);
+ 			_TRACE << c << " not found.";
+ 		  }
+       }
 
-      if (rep.find(c) == rep.end()) {
-        _TRACE << c << " still not found!";
-      }
-    }
-  }
+       if (rep.find(c) == rep.end()) {
+         _TRACE << c << " still not found!";
+       }
+     }
+   }
 
   /**
    *
@@ -146,12 +134,35 @@ public:
    */
   void load(boost::archive::text_iarchive& ia) {
     ia >> rep;
+//<<<<<<< HEAD
+    if(track){
+    	_INFO<<"feat value";
+		for(auto it:rep){
+			_INFO<<"it "<<it.first;
+			for(auto it2:it.second){
+				_INFO<<"action "<<it2.first<<" value "<<it2.second;
+/*=======
+    if(log){
+		for(auto elem: rep){
+			_INFO<<"feature "<<elem.first;
+			for(auto elem2: elem.second){
+				_INFO<<" key "<<elem2.first<<" value "<<elem2.second;
+
+>>>>>>> morph_a_ref*/
+			}
+		}
+    }
   }
 
 private:
   map_t rep;
   cache_t cache;
   extractor_t extractor;
+//<<<<<<< HEAD
+  bool track = false;
+//=======
+//  bool log = false;
+//>>>>>>> morph_a_ref
 };
 
 }

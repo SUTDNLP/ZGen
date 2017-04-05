@@ -59,7 +59,7 @@ private:
    */
   void build_output(const StateItem& item,
       const dependency_t& input,
-      dependency_t* output);
+      dependency_t* output, std::vector<int> & final_order);
 
   // Validating the data when dataset and reference set is both loaded.
   bool learn_dataset_and_referset_validation();
@@ -78,6 +78,7 @@ private:
   Engine::TokenAlphabet forms_alphabet;   //! The forms alphabet.
   Engine::TokenAlphabet postags_alphabet; //! The postags alphabet.
   Engine::TokenAlphabet deprels_alphabet; //! The dependency relation alphabet.
+  Engine::TokenAlphabet deprels_alphabet_graph;
 private:
   std::vector<dependency_t> dataset;
   std::vector<dependency_t> referset;

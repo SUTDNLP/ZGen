@@ -5,12 +5,20 @@ namespace ZGen {
 void
 DependencyParse::clear() {
   forms.clear();
+  lexemes.clear();
+  prefix_types.clear();
   postags.clear();
   heads.clear();
   deprels.clear();
   words.clear();
   phrases.clear();
   extras.clear();
+  tense_participles.clear();
+  numbers.clear();
+  brackets.clear();
+  quotes.clear();
+  quote_brackets.clear();
+
 }
 
 void
@@ -56,6 +64,12 @@ DependencyParse::push_back(const word_t & form,
 }
 
 void
+DependencyParse::push_back(const std::vector<word_t> & v_lexemes, const std::vector<PrefixType> & v_prefix_types ){
+	lexemes.push_back(v_lexemes);
+	prefix_types.push_back(v_prefix_types);
+}
+
+void
 DependencyParse::push_back(const word_t& form,
     const postag_t& postag,
     const int head,
@@ -69,7 +83,17 @@ DependencyParse::push_back(const word_t& form,
 }
 
 word_t DependencyParse::form(int index) const     { return forms.at(index); }
-postag_t DependencyParse::postag(int index) const { return postags.at(index); }
+
+void DependencyParse::push_back_extra_info(TenseParticiple tense_participle , Number number, Quoted quoted, Bracket bracket, QuoteBracket quote_bracket){
+	tense_participles.push_back(tense_participle);
+	numbers.push_back(number);
+	quotes.push_back(quoted);
+	brackets.push_back(bracket);
+	quote_brackets.push_back(quote_bracket);
+}
+postag_t
+DependencyParse::postag(int index) const { return postags.at(index); }
+
 size_t DependencyParse::size() const              { return forms.size(); }
 
 std::ostream& operator << (std::ostream& os, const DependencyParse& d) {

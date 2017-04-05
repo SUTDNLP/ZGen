@@ -5,6 +5,8 @@
 namespace ZGen {
 namespace ShiftReduce {
 
+extern int word_comma;
+
 #define _u(name) [](const ctx_t& ctx, const action_t& act, \
     std::vector<us_t>& cache) -> void{ \
   if (ctx.name) { \
@@ -53,7 +55,7 @@ Ngram::score(const StateItem& state, const Action& act,
 			lm::ngram::ProbingModel::State& out, const Engine::TokenAlphabet& forms_alphat) {
   floatval_t result;
   lm::ngram::ProbingModel::State prev = state.ngstate;
-  if (act.name() != Action::kShift) {
+  if (act.name() != Action::kShift && act.name() != Action::kInsert && act.name() != Action::kSplitArc) {
   	return -1;
   }
   int index = act.index;
@@ -62,8 +64,14 @@ Ngram::score(const StateItem& state, const Action& act,
   int begin_index = ref->phrases[index].first;
   int end_index = ref->phrases[index].second;
   bool first = true;
-  for (int i = begin_index; i < end_index; i ++) {
-	  word_t word = ref->words[i];
+//  for (int i = begin_index; i < end_index; i ++) {
+//	  word_t word = ref->words[i];
+  	  word_t word = -1;
+  	  if(act.name() == Action::kInsert){
+  		word = word_comma;
+  	  }else {
+  		word = act.word;
+  	  }
 	  lm::WordIndex vocab = model->GetVocabulary().Index(forms_alphat.decode(word));
 	  lm::FullScoreReturn ret;
 	  ret = model->FullScore(prev, vocab, out);
@@ -72,7 +80,7 @@ Ngram::score(const StateItem& state, const Action& act,
 	      result = ret.prob;
 		  first = false;
 	  }
-  }
+//  }
   return bin(result);
 }
 

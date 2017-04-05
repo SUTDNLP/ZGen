@@ -38,6 +38,21 @@ public:
   static bool is_right_arc(const action_t & act);
 
   /**
+   * Judge if given action is SplitArc
+   */
+  static bool is_split_arc(const action_t& act);
+
+  /**
+   * Judge if given action is Insert
+   */
+  static bool is_insert(const action_t& act);
+
+  /**
+   * Judge if given action is Idle
+   */
+  static bool is_idle(const action_t& act);
+
+  /**
    * Get gold action sequence.
    *
    *  @param[in]  reference The reference dependency instance.
@@ -63,6 +78,10 @@ private:
       const dependency_t& reference,
       const std::vector<std::vector<int> > & tree,
       action_sequence_t& actions);
+  static bool is_comma(const dependency_t& parse, int root);
+  static bool is_that_to(const dependency_t& parse, int root);
+  static bool is_function_word(const dependency_t& parse, int child);
+  static void remove_from_actions(int child, std::vector<action_t>& actions);
 };
 
 } //  end for namespace ShiftReduce

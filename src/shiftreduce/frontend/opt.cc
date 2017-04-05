@@ -29,6 +29,8 @@ bool parse_options(bool learn,
       opts.input_type = sr::option_t::PARTIAL;
     } else if (vm["type"].as<std::string>() == "full") {
       opts.input_type = sr::option_t::FULL;
+    } else if (vm["type"].as<std::string>() == "graph") {
+      opts.input_type = sr::option_t::GRAPH;
     } else if (vm["type"].as<std::string>() == "full-guide-feature") {
       opts.input_type = sr::option_t::FULL_WITH_GUIDANCE_FEATURE;
     } else if (vm["type"].as<std::string>() == "full-topdown-constrain") {
@@ -73,9 +75,21 @@ bool parse_options(bool learn,
   if (vm.count("labeled")) { opts.output_label = true; }
   else { opts.output_label = false; }
 
+  if(vm.count("mapping")) { opts.mapping_path = vm["mapping"].as<std::string>();}
+
+  if(!vm.count("graph")){
+	  _ERROR << "parseopt: Graph path should be specified";
+	  return false;
+  }else {
+	  opts.graph_path = vm["graph"].as<std::string>();
+  }
+
   // [Parse beam size
   opts.beam_size = 64;
-  if (vm.count("beam")) { opts.beam_size = vm["beam"].as<int>(); }
+  if (vm.count("beam")) {
+	  opts.beam_size = vm["beam"].as<int>();
+	  _INFO<<"beam size "<<opts.beam_size;
+  }
 
   if (opts.input_type == sr::option_t::FULL_WITH_TOPDOWN_CONSTRAIN
       || opts.input_type == sr::option_t::FULL_WITH_TOPDOWN_FEATURE
@@ -87,24 +101,25 @@ bool parse_options(bool learn,
     if (vm.count("posdict")) {
       opts.postag_dict_path = vm["posdict"].as<std::string>();
     } else {
-      _WARN << "parseopt: postag dict is specified.";
+      _WARN << "parseopt: postag dict is not specified.";
+    }
+
+    if(vm.count("most_frequent_posdict")){
+    	opts.most_frequent_postag_dict_path = vm["most_frequent_posdict"].as<std::string>();
+    } else {
+    	_WARN << "parseopt: most frequent postag dict is not specified.";
     }
   }
 
   opts.display_interval = 1000;
   if (vm.count("display")) { opts.display_interval = vm["display"].as<int>(); }
 
- /* if(vm.count("mode")){
-	  opts.mode = vm["mode"].as<int>();
-  }else{
-	  _WARN << "mode is to be set for trying different configuration";
-  }*/
-
-  if(vm.count("lookahead")){
-	  opts.lookahead = true;
-  }else{
-	  opts.lookahead = false;
+  if(vm.count("previous_words_that_path")){
+	  opts.previous_words_that_path = vm["previous_words_that_path"].as<std::string>();
+  } else {
+	  _WARN << "parseopt: previous_words_that_path is not specified.";
   }
+
   return true;
 }
 

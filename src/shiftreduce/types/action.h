@@ -14,19 +14,32 @@ namespace ShiftReduce {
 
 class Action {
 public:
-  enum {
+  enum ACTION_TYPE{
     kNone = 0,
     kShift,
     kLeftArc,
-    kRightArc
+    kRightArc,
+	kInsert,
+	kSplitArc,
+	kIdle
+  };
+
+  enum SPLIT_ARC_TAG{
+//	  kNone=0,
+	  kParentShiftedChildNotShifted,
+	  kParentShiftedChildShifted,
+	  kParentNotShiftedChildNotShifted,
+	  kParentNotShiftedChildShifted
   };
 
   Action();
   Action(int _name, int _tag, int _word, int _index);
+  Action(int _name, int _tag, int _word, int _index, PrefixType prefix_type);
 
   inline std::size_t hash() const { return seed; }
   inline int name() const { return rep & 0x07; }
   inline int tag()  const { return rep >> 3; }
+  inline PrefixType get_prefix_type(){return prefix_type;}
 
   bool operator == (const Action& a) const { return (a.rep == rep && a.word == word); }
   bool operator != (const Action& a) const { return !((*this) == a); }
@@ -45,6 +58,7 @@ public:
               //! (on SHIFT) and dependency relation (on LEFT-ARC and RIGHT-ARC)
   int word;   //! The word.
   int index;  //! extra field for auxilary in the SHIFT action.
+  PrefixType prefix_type;
 
   std::size_t seed;
 };
@@ -53,13 +67,16 @@ typedef Action action_t;
 
 class ActionFactory {
 public:
-  static Action make_shift(int tag, int word, int index);
+  static Action make_shift(int tag, int word, int index, PrefixType prefix_type);
   static Action make_left_arc();
   static Action make_right_arc();
   static Action make_left_arc(int label);
   static Action make_right_arc(int label);
+  static Action make_insert();
+  static Action make_insert(int index);
+  static Action make_idle();
+  static Action make_split_arc(int tag, int word);
 };
-
 } //  namespace shiftreduce
 } //  namespace zgen
 

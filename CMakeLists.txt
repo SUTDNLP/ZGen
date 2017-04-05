@@ -64,6 +64,7 @@ add_executable (ZGen_SR
     ${SOURCE_DIR}/shiftreduce/decode/none_decoder.cc
     ${SOURCE_DIR}/shiftreduce/decode/partial_decoder.cc
     ${SOURCE_DIR}/shiftreduce/decode/full_decoder.cc
+    ${SOURCE_DIR}/shiftreduce/decode/graph_decoder.cc
     ${SOURCE_DIR}/shiftreduce/frontend/opt.cc
     ${SOURCE_DIR}/shiftreduce/frontend/main.cc
 	${SOURCE_DIR}/shiftreduce/ngram/lm/search_trie.cc

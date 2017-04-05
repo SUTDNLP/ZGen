@@ -1,9 +1,9 @@
 #include "shiftreduce/types/action.h"
 #include "shiftreduce/model/model.h"
+#include <bitset>
 
 namespace ZGen {
 namespace ShiftReduce {
-
 #define _u(name) [](const ctx_t& ctx, const action_t& act, \
     std::vector<us_t>& cache) -> void{ \
   if (ctx.name) { \
@@ -34,7 +34,19 @@ namespace ShiftReduce {
 
 #define add_unigram_feature(label_related, name) do { \
   if (!label_related || opts.output_label) { \
-    uscore_repo.push_back( ScoreMap<us_t>( _u(name) ) ); \
+    uscore_repo.push_back( ScoreMap<us_t>( _u(name)) ); \
+  } \
+} while (0);
+
+#define add_unigram_feature_log(label_related, name) do { \
+  if (!label_related || opts.output_label) { \
+    uscore_repo.push_back( ScoreMap<us_t>( _u(name) , true) ); \
+  } \
+} while (0);
+
+#define add_unigram_feature_track(label_related, name) do { \
+  if (!label_related || opts.output_label) { \
+    uscore_repo.push_back( ScoreMap<us_t>( _u(name), true ) ); \
   } \
 } while (0);
 
@@ -50,25 +62,24 @@ namespace ShiftReduce {
   } \
 } while (0);
 
-
 #define add_fourgram_feature(label_related, name1, name2, name3, name4) do { \
   if (!label_related || opts.output_label) { \
 	  foscore_repo.push_back( ScoreMap<fos_t>( _fo(name1, name2, name3, name4) ) ); \
   } \
 } while (0);
 
-#define lookahead_features_unigram_macro_min(label, feat1) do {\
-		add_bigram_feature(label, S0w,feat1);\
-		add_bigram_feature(label, S0p,feat1);\
-		add_bigram_feature(label, S1w,feat1);\
-		add_bigram_feature(label, S1p,feat1);\
+#define lookahead_features_unigram_macro_min(feat1) do {\
+		add_bigram_feature(false, S0w,feat1);\
+		add_bigram_feature(false, S0p,feat1);\
+		add_bigram_feature(false, S1w,feat1);\
+		add_bigram_feature(false, S1p,feat1);\
 } while(0);
 
-#define lookahead_features_bigram_macro_min(label, feat1, feat2) do {\
-		add_trigram_feature(label, S0w,feat1, feat2);\
-		add_trigram_feature(label, S0p,feat1, feat2);\
-		add_trigram_feature(label, S1w,feat1, feat2);\
-		add_trigram_feature(label, S1p,feat1, feat2);\
+#define lookahead_features_bigram_macro_min(feat1, feat2) do {\
+		add_trigram_feature(false, S0w,feat1, feat2);\
+		add_trigram_feature(false, S0p,feat1, feat2);\
+		add_trigram_feature(false, S1w,feat1, feat2);\
+		add_trigram_feature(false, S1p,feat1, feat2);\
 } while(0);
 
 #define lookahead_features_unigram_macro_extra(feat1) do {\
@@ -76,18 +87,18 @@ namespace ShiftReduce {
 		add_bigram_feature(false, S0p,feat1);\
 		add_bigram_feature(false, S0ldw,feat1);\
 		add_bigram_feature(false, S0ldp,feat1);\
-		add_bigram_feature(true, S0ldl,feat1);\
+		add_bigram_feature(false, S0ldl,feat1);\
 		add_bigram_feature(false, S0rdw,feat1);\
 		add_bigram_feature(false, S0rdp,feat1);\
-		add_bigram_feature(true, S0rdl,feat1);\
+		add_bigram_feature(false, S0rdl,feat1);\
 		add_bigram_feature(false, S1w,feat1);\
 		add_bigram_feature(false, S1p,feat1);\
 		add_bigram_feature(false, S1ldw,feat1);\
 		add_bigram_feature(false, S1ldp,feat1);\
-		add_bigram_feature(true, S1ldl,feat1);\
+		add_bigram_feature(false, S1ldl,feat1);\
 		add_bigram_feature(false, S1rdw,feat1);\
 		add_bigram_feature(false, S1rdp,feat1);\
-		add_bigram_feature(true, S1rdl,feat1);\
+		add_bigram_feature(false, S1rdl,feat1);\
 		add_bigram_feature(false, W0,feat1);\
 		add_bigram_feature(false, P0,feat1);\
 		add_trigram_feature(false, W0, W1,feat1);\
@@ -106,42 +117,69 @@ namespace ShiftReduce {
 		add_trigram_feature(false, S0p, S1p ,feat1);\
 } while(0);
 
-#define shifted(label, prefix) do{\
-		add_unigram_feature(label, prefix##_shifted);	\
-		add_unigram_feature(label, prefix##_not_shifted);	\
-		lookahead_features_unigram_macro_min(label, prefix##_shifted);	\
-		lookahead_features_unigram_macro_min(label, prefix##_not_shifted);	\
+#define shifted(prefix) do{\
+		add_unigram_feature(false, prefix##_shifted);	\
+		add_unigram_feature(false, prefix##_not_shifted);	\
+		lookahead_features_unigram_macro_min(prefix##_shifted);	\
+		lookahead_features_unigram_macro_min(prefix##_not_shifted);	\
 }while(0);\
 
-#define shifted_parent(label, prefix1, prefix2) do{\
-		add_bigram_feature(label, parent_##prefix1##_shifted, parent_##prefix1##_##prefix2);\
-		lookahead_features_bigram_macro_min(label, parent_##prefix1##_shifted, parent_##prefix1##_##prefix2);\
+#define bigram_shifted(prefix, prefix2) do{\
+		add_bigram_feature(false, prefix##_shifted, prefix2);	\
+		add_bigram_feature(false, prefix##_not_shifted, prefix2);	\
+		lookahead_features_bigram_macro_min(prefix##_shifted, prefix2);	\
+		lookahead_features_bigram_macro_min(prefix##_not_shifted, prefix2);	\
 }while(0);\
 
 void Model::standard_features(const option_t& opts) {
+//	std::bitset<2> features(opts.mode);
 	add_unigram_feature(false, S0w);
 	add_unigram_feature(false, S0p);
 	add_unigram_feature(false, S0ldw);
 	add_unigram_feature(false, S0ldp);
-	add_unigram_feature(true, S0ldl);
+	add_unigram_feature(false, S0ldl);
 
 	add_unigram_feature(false, S0rdw);
 	add_unigram_feature(false, S0rdp);
-	add_unigram_feature(true, S0rdl);
+	add_unigram_feature(false, S0rdl);
+
+	add_unigram_feature( false, S0l2dw );
+	add_unigram_feature( false, S0l2dp );
+	add_unigram_feature( true, S0l2dl );
+
+	add_unigram_feature( false, S0r2dw );
+	add_unigram_feature( false, S0r2dp );
+	add_unigram_feature( true, S0r2dl );
+
+	/*add_bigram_feature( false, S0ldw, S0l2dw );
+	add_bigram_feature( false, S0ldp, S0l2dp );
+	add_bigram_feature( true, S0ldl, S0l2dl );*/
+
+	add_unigram_feature( false, S1l2dw );
+	add_unigram_feature( false, S1l2dp );
+	add_unigram_feature( true, S1l2dl );
+
+	add_unigram_feature( false, S1r2dw );
+	add_unigram_feature( false, S1r2dp );
+	add_unigram_feature( true, S1r2dl );
+
+	/*add_bigram_feature( false, S1r2dw, S1rdw );
+	add_bigram_feature( false, S1r2dp, S1rdp );
+	add_bigram_feature( true, S1r2dl, S1rdl );*/
 
 	add_bigram_feature(false, S0w, S0ldw);
 	add_bigram_feature(false, S0w, S0ldp);
-	add_bigram_feature(true, S0w, S0ldl);
+	add_bigram_feature(false, S0w, S0ldl);
 	add_bigram_feature(false, S0p, S0ldw);
 	add_bigram_feature(false, S0p, S0ldp);
-	add_bigram_feature(true, S0p, S0ldl);
+	add_bigram_feature(false, S0p, S0ldl);
 	add_bigram_feature(false, S0w, S0rdw);
 	add_bigram_feature(false, S0w, S0rdp);
-	add_bigram_feature(true, S0w, S0rdl);
+	add_bigram_feature(false, S0w, S0rdl);
 	add_bigram_feature(false, S0p, S0rdw);
 	add_bigram_feature(false, S0p, S0rdp);
-	add_bigram_feature(true, S0p, S0rdl);
-
+	add_bigram_feature(false, S0p, S0rdl);
+//		_INFO<<"trigram S0";
 	add_trigram_feature(false, S0w, S0p, S0ldw);
 	add_trigram_feature(false, S0w, S0p, S0ldp);
 	add_trigram_feature(false, S0w, S0ldw, S0ldp);
@@ -155,23 +193,25 @@ void Model::standard_features(const option_t& opts) {
 	add_unigram_feature(false, S1p);
 	add_unigram_feature(false, S1ldw);
 	add_unigram_feature(false, S1ldp);
-	add_unigram_feature(true, S1ldl);
+	add_unigram_feature(false, S1ldl);
+
 	add_unigram_feature(false, S1rdw);
 	add_unigram_feature(false, S1rdp);
-	add_unigram_feature(true, S1rdl);
+	add_unigram_feature(false, S1rdl);
+
 	add_bigram_feature(false, S1w, S1ldw);
 	add_bigram_feature(false, S1w, S1ldp);
-	add_bigram_feature(true, S1w, S1ldl);
+	add_bigram_feature(false, S1w, S1ldl);
 	add_bigram_feature(false, S1p, S1ldw);
 	add_bigram_feature(false, S1p, S1ldp);
-	add_bigram_feature(true, S1p, S1ldl);
+	add_bigram_feature(false, S1p, S1ldl);
 	add_bigram_feature(false, S1w, S1rdw);
 	add_bigram_feature(false, S1w, S1rdp);
-	add_bigram_feature(true, S1w, S1rdl);
+	add_bigram_feature(false, S1w, S1rdl);
 	add_bigram_feature(false, S1p, S1rdw);
 	add_bigram_feature(false, S1p, S1rdp);
-	add_bigram_feature(true, S1p, S1rdl);
-
+	add_bigram_feature(false, S1p, S1rdl);
+//		_INFO<<"trigram S1";
 	add_trigram_feature(false, S1w, S1p, S1ldw);
 	add_trigram_feature(false, S1w, S1p, S1ldp);
 	add_trigram_feature(false, S1w, S1ldw, S1ldp);
@@ -180,6 +220,7 @@ void Model::standard_features(const option_t& opts) {
 	add_trigram_feature(false, S1w, S1p, S1rdp);
 	add_trigram_feature(false, S1w, S1rdw, S1rdp);
 	add_trigram_feature(false, S1p, S1rdw, S1rdp);
+//	}
 
 	add_bigram_feature(false, S0w, S1w);
 	add_bigram_feature(false, S0w, S1p);
@@ -197,10 +238,6 @@ void Model::standard_features(const option_t& opts) {
 	add_trigram_feature(false, W0, W1, W2);
 	add_trigram_feature(false, P0, P1, P2);
 
-	add_trigram_feature( false, S0w, S1w, S0S1Dist );
-	add_trigram_feature( false, S0w, S1p, S0S1Dist );
-	add_trigram_feature( false, S0p, S1w, S0S1Dist );
-	add_trigram_feature( false, S0p, S1p, S0S1Dist );
 
 	add_bigram_feature( false, S0p, S0la );
 	add_bigram_feature( false, S0p, S0ra );
@@ -210,6 +247,27 @@ void Model::standard_features(const option_t& opts) {
 	add_bigram_feature( false, S1p, S1ra );
 	add_bigram_feature( false, S1p, S1ls );
 	add_bigram_feature( false, S1p, S1rs );
+
+	add_trigram_feature( false, S0w, S1w, S0S1Dist );
+	add_trigram_feature( false, S0w, S1p, S0S1Dist );
+	add_trigram_feature( false, S0p, S1w, S0S1Dist );
+	add_trigram_feature( false, S0p, S1p, S0S1Dist );
+}
+
+//<<<<<<< HEAD
+void Model::add_bracket_quote_features(const option_t& opts) {
+	add_trigram_feature(false, w0_begin_quote, qw0, qbw0);
+	add_trigram_feature(false, bw0_end_quote, qw0, qbw0);
+	add_bigram_feature(false, w0_begin_quote, qw0_equals_qbw0);
+	add_bigram_feature(false, bw0_end_quote, qw0_equals_qbw0);
+	add_trigram_feature(false, w0_not_begin_quote, bw0_not_end_quote,
+			qw0_not_equals_qbw0);
+	add_bigram_feature(false, w0_begin_bracket, w0_bracket_equals_bw0_bracket);
+	add_bigram_feature(false, bw0_end_bracket, w0_bracket_equals_bw0_bracket);
+	add_trigram_feature(false, w0_not_begin_bracket, bw0_not_end_bracket,
+			w0_bracket_not_equals_bw0_bracket);
+	add_fourgram_feature(false, w0_not_begin_bracket, bw0_not_end_bracket,
+			w0_bracket, bw0_bracket);
 }
 
 Model::Model(const option_t& opts) {
@@ -217,36 +275,39 @@ Model::Model(const option_t& opts) {
   bscore_repo.reserve(80);
   tscore_repo.reserve(80);
   foscore_repo.reserve(80);
-  _INFO<<"Experiment 22-3.1 - All feat with S0 lookahead feat";
-//  _INFO<<"mode "<<opts.mode;
-//  int mode = opts.mode;
+
+  _INFO<<"Experiment 21-12.1 excluding no instances";
+
   standard_features(opts);
+  add_unigram_feature(false, buffer_pos);
+  lookahead_features_unigram_macro_extra(buffer_pos);
+  add_unigram_feature(false, buffer_word);
+  lookahead_features_unigram_macro_extra(buffer_word);
 
-	add_unigram_feature(false, buffer_pos);
-	lookahead_features_unigram_macro_extra(buffer_pos);
+  shifted(parent_bw0);
+  shifted(children_bw0);
+  shifted(sibling_bw0);
+  shifted(parent_S0);
+  shifted(children_S0);
+  shifted(sibling_S0);
 
-	add_unigram_feature(false, buffer_word);
-	lookahead_features_unigram_macro_extra(buffer_word);
 
-	if(opts.lookahead){
-		shifted(true, sibling_bw0);
-		shifted(true, children_bw0);
-		shifted(false, children_bw0_pos);
-		shifted(false, sibling_bw0_pos);
+  shifted(parent_bw0_pos);
+  shifted(children_bw0_pos);
+  shifted(sibling_bw0_pos);
+  shifted(parent_S0_pos);
+  shifted(children_S0_pos);
+  shifted(sibling_S0_pos);
 
-		shifted(true, sibling_S0);
-		shifted(true, children_S0);
-		shifted(false, children_S0_pos);
-		shifted(false, sibling_S0_pos);
+  add_bracket_quote_features(opts);
+  add_bigram_feature(false, all_descendants_shifted, left_arc);
+  add_bigram_feature(false, all_descendants_shifted, right_arc);
 
-		shifted_parent(true, bw0, label);
-		shifted_parent(true, S0, label);
-
-		shifted_parent(false, bw0, pos);
-		shifted_parent(false, S0, pos);
-
-		shifted_parent(false, bw0, word);
-	}
+  add_unigram_feature(false, all_descendants_shifted);
+  add_unigram_feature(false, is_descendant);
+  add_unigram_feature(false, is_sibling_or_parent);
+  add_bigram_feature(false, all_descendants_shifted, is_descendant);
+  add_bigram_feature(false, all_descendants_shifted, is_sibling_or_parent);
 }
 
 floatval_t

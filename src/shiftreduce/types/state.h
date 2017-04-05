@@ -5,6 +5,7 @@
 #include <bitset>
 #include <cstring>
 #include "settings.h"
+#include "knowledge/postag_constraint.h"
 #include "shiftreduce/settings.h"
 #include "shiftreduce/types/action.h"
 #include "types/graph.h"
@@ -33,6 +34,8 @@ public:
    */
   void set_reference(const dependency_t* _ref);
 
+  void set_gold_reference(const dependency_t* _ref);
+
   void set_graph(const graph_t* graph);
 
   void set_forms_alphabet(const Engine::TokenAlphabet* forms_alphabet);
@@ -40,6 +43,8 @@ public:
   void set_deprels_alphabet(const Engine::TokenAlphabet* deprels_alphabet);
 
   void set_pos_alphabet(const Engine::TokenAlphabet* pos_alphabet);
+
+  void set_pos_constraint(const Knowledge::PostagConstraint* constraint);
 
   /**
    * Clear the state item.
@@ -62,12 +67,14 @@ public:
   int top0;   //! The top word in the stack of the current state
   int top1;   //! The second top word.
   const dependency_t* ref;    //! The reference to the sentence
+  const dependency_t* gold_ref;    //! The reference to the gold sentence used during training
   const StateItem* previous;  //! The previous state
   floatval_t score;           //! The score for the current state
   std::vector<int> stack;     //! The stack for the current state
   std::vector< word_t >   word_sequence;      //! The sequence of words leading by the current state.
   std::vector< postag_t > postag_sequence;    //! The sequence of postags leading by the current state.
   std::bitset<kMaxNumberOfWords> buffer;      //! The word indices in buffer for current state.
+  std::bitset<kMaxNumberOfWords> shifted;      //! The word indices in stack shifted but not reduced for current state.
   int rank[kMaxNumberOfWords];                //! The rank of the form, with word considered.
   int postags[kMaxNumberOfWords];             //! The postags cache.
   int heads[kMaxNumberOfWords];               //! The tree(heads) for the current status
@@ -80,12 +87,21 @@ public:
   int right_most_child[kMaxNumberOfWords];    //! CACHE: use to store the right most child for the word.
   int left_2nd_most_child[kMaxNumberOfWords]; //! CACHE: use to store the 2nd-left-most child.
   int right_2nd_most_child[kMaxNumberOfWords];//! CACHE: use to store the 2nd-right-most child.
+  std::map<int, std::vector<int>> right_children; //! use to store the right children
+  std::map<int, int> child_comma; //! use to store the count of comma children
+  std::map<int, std::vector<int>> right_descendants; //! use to store the right descendants
+  std::map<int, std::vector<int>> left_descendants; //! use to store the left descendants
+//  std::vector<int> left_children[kMaxNumberOfWords]; //! use to store the right children
   action_t last_action;                       //! The action that result in the current state.
   const graph_t* graph;
   std::vector<int> words_shifted;
+  std::vector<int> words_forms_shifted;
+  std::map<int,int> words_shifted_map;
   const Engine::TokenAlphabet* forms_alphabet;
   const Engine::TokenAlphabet* deprels_alphabet;
   const Engine::TokenAlphabet* pos_alphabet;
+  //! The postag constraints.
+  const Knowledge::PostagConstraint* constraint;
   //ljm
   //{
   lm::ngram::ProbingModel::State ngstate;
@@ -121,7 +137,7 @@ public:
    *                        otherwise false
    */
   bool shift(postag_t postag, word_t word,
-      int word_id, StateItem* other) const;
+      int word_id, PrefixType prefix_type, StateItem* other) const;
 
   /**
    * Perform left arc on current state, result in a new state on itself.
@@ -152,6 +168,31 @@ public:
    * a new state.
    */
   bool right_arc(deprel_t deprel, StateItem* other) const;
+
+  bool insert(int index);
+
+   /**
+    * An output wrapper for insert by performing insert and result in
+    * a new state.
+    */
+   bool insert(int index, StateItem* other) const;
+
+   /**
+    * An output wrapper for insert by performing idle and result in
+    * a new state.
+    */
+   bool idle(StateItem* other) const;
+
+  /**
+   *
+   */
+  bool split_arc(split_mode_t tag, word_t word);
+  /**
+   *
+   */
+  bool split_arc(split_mode_t tag, word_t word, StateItem* other) const;
+
+  const char * form(int input) const;
 };
 
 } //  end for namespace ShiftReduce

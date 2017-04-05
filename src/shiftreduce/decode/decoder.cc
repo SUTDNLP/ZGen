@@ -7,6 +7,10 @@
 namespace ZGen {
 namespace ShiftReduce {
 
+extern int sentence_no;
+extern int const_sentence_no;
+action_sequence_t decoder_gold_actions;
+int step_no;
 namespace eg = ZGen::Engine;
 namespace kn = ZGen::Knowledge;
 
@@ -38,16 +42,28 @@ Decoder::get_possible_shift_actions(const StateItem& item,
   if (tag == eg::TokenAlphabet::NONE) {
     if (ref->is_phrases[j]) {
       // NP tag should be passed into the decoder!
-      possible_actions.push_back(ActionFactory::make_shift(NP, word, j));
+      possible_actions.push_back(ActionFactory::make_shift(NP, word, j, PrefixType::kNone));
     } else {
       std::vector<postag_t> possible_tags;
-      constraint->get_possible_tags(word, possible_tags);
+      constraint->get_possible_tags(ref, j, word, possible_tags);
       for (const postag_t& t: possible_tags) {
-        possible_actions.push_back(ActionFactory::make_shift(t, word, j));
+        std::vector<word_t> lexemes =  item.ref->lexemes[j];
+		std::vector<PrefixType> prefix_types = item.ref->prefix_types[j];
+		int loop_index = 0;
+		for(word_t lexeme: lexemes){
+		  possible_actions.push_back(ActionFactory::make_shift(t, lexeme, j, prefix_types[loop_index]));
+		  loop_index++;
+		}
       }
     }
   } else {
-    possible_actions.push_back(ActionFactory::make_shift(tag, word, j));
+	  std::vector<word_t> lexemes =  item.ref->lexemes[j];
+	  std::vector<PrefixType> prefix_types = item.ref->prefix_types[j];
+	  int loop_index = 0;
+	  for(word_t lexeme: lexemes){
+		  possible_actions.push_back(ActionFactory::make_shift(tag, lexeme, j, prefix_types[loop_index]));
+		  loop_index++;
+	  }
   }
 }
 
@@ -59,7 +75,7 @@ Decoder::score_possible_actions(const StateItem& from) {
 	ctx.load_generic_actions(from,act);
 	lm::ngram::ProbingModel::State out;
     packed_score[act] = model->score(ctx, from, act, !opts.learn, out, forms_alphabet);
-	if (act.name() == Action::kShift) {
+	if (act.name() == Action::kShift || act.name() == Action::kInsert || act.name() == Action::kSplitArc) {
 		packed_ngstate[act] = out;
 	}
 	else {
@@ -103,7 +119,7 @@ Decoder::transit(const StateItem& from, const action_t& act, floatval_t score,
     StateItem* to) {
   to->ngstate = packed_ngstate[act];
   if (ActionUtils::is_shift(act)) {
-    from.shift(act.tag(), act.word, act.index, to);
+    from.shift(act.tag(), act.word, act.index, act.prefix_type, to);
     to->score = score;
   } else if (ActionUtils::is_left_arc(act)) {
     from.left_arc(act.tag(), to);
@@ -111,7 +127,16 @@ Decoder::transit(const StateItem& from, const action_t& act, floatval_t score,
   } else if (ActionUtils::is_right_arc(act)) {
     from.right_arc(act.tag(), to);
     to->score = score;
-  } else {
+  } else if (ActionUtils::is_insert(act)){
+	from.insert(act.index, to);
+	to->score = score;
+  } else if (ActionUtils::is_split_arc(act)){
+	from.split_arc(act.tag(), act.word, to);
+	to->score = score;
+  } else if (ActionUtils::is_idle(act)){
+	from.idle(to);
+	to->score = score;
+  } else{
     _WARN << "Decoder(transit): Unknown action";
   }
 }
@@ -130,8 +155,6 @@ Decoder::search_correct_state(const action_t& act,
     }
   } else {
     for (const StateItem* p = begin; p != end; ++ p) {
-      //_TRACE << "decode: search correct " << (void *)p << " " << p->last_action
-      //  << " " << (void *)p->previous;
       if (p->previous == previous_correct_state && p->last_action == act &&
           p->last_action.index == act.index) {
         correct_state = p; break;
@@ -147,13 +170,14 @@ Decoder::search_correct_state(const action_t& act,
             _WARN << "decode: the expected shifted index should be empty";
             break;
           }
-
           p->buffer.set(expected_shifted_index, 0);
           p->buffer.set(shifted_index, 1);
           p->postags[expected_shifted_index] = p->postags[shifted_index];
           p->postags[shifted_index] = 0;
           p->stack.back() = expected_shifted_index;
+          p->top0 = expected_shifted_index;
           p->last_action = act;
+          p->words_shifted_map[expected_shifted_index] = act.word;
           correct_state = p;
           break;
         }
@@ -173,9 +197,9 @@ Decoder::search_best_state(const StateItem* begin, const StateItem* end) {
 }
 
 Decoder::decode_result_t
-Decoder::decode(const dependency_t* input,
-    const action_sequence_t& gold_actions, const graph_t* graph ) {
-  config_input(input);
+Decoder::decode(const dependency_t* input, const dependency_t* gold,
+    const action_sequence_t& gold_actions, const graph_t* graph , std::vector<int>& out_of_beam) {
+  config_input(gold);
 
   ctx->lattice[0].clear();
   if(model->ngram != NULL)
@@ -185,24 +209,27 @@ Decoder::decode(const dependency_t* input,
   ctx->lattice[0].set_forms_alphabet(&forms_alphabet);
   ctx->lattice[0].set_deprels_alphabet(deprels_alphabet);
   ctx->lattice[0].set_pos_alphabet(pos_alphabet);
-//  ctx->lattice[0].set_forms_alphabet(&pos_alphabet);
+  ctx->lattice[0].set_pos_constraint(constraint);
   ctx->lattice_index[0] = ctx->lattice;
   ctx->lattice_index[1] = ctx->lattice+ 1;
+  decoder_gold_actions = gold_actions;
   const StateItem* correct_state = NULL;
   int step;
   int steps;
-  steps = (input->size()* 2) - 1;
+  steps = (input->size()* 4) - 2;
 
   if (opts.learn) {
     correct_state= ctx->lattice;
   }
   for (step = 1; step <= steps; ++ step) {
+	  if(sentence_no == const_sentence_no){
     _TRACE << "Decoder(round): #" << step;
+	  }
+    step_no = step;
     int current_beam_size = 0;
     clear_candidate_transition();
     for (const StateItem* from = ctx->lattice_index[step- 1];
         from != ctx->lattice_index[step]; ++ from) {
-      //_TRACE << "Decoder(extend from state " << (void*)from << ")";
       get_possible_actions((*from));
       score_possible_actions((*from));
 
@@ -215,9 +242,11 @@ Decoder::decode(const dependency_t* input,
 
     for (int i = 0; i < current_beam_size; ++ i) {
       const scored_transition_t& tran = candidate_transitions[i];
+      if(sentence_no == const_sentence_no){
       _TRACE << "Decoder(transit): " << (void*)(tran.get<0>())
         << "->" << (void*)(ctx->lattice_index[step]+ i)
         << " by " << tran.get<1>() <<" word "<< this->forms_alphabet.decode(tran.get<1>().word)<< ",s=" << tran.get<2>() ;
+      }
       transit((*tran.get<0>()), tran.get<1>(), tran.get<2>(),
           (ctx->lattice_index[step]+ i));
     }
@@ -228,6 +257,7 @@ Decoder::decode(const dependency_t* input,
             ctx->lattice_index[step], ctx->lattice_index[step+ 1]);
       bool correct_state_in_beam = (next_correct_state!= NULL);
       if (!correct_state_in_beam) {
+    	  out_of_beam.push_back(sentence_no);
         _TRACE << "Decoder(decode terminal): correct state fallout beam at #"
           << step- 1 << " to #" << step;
         const StateItem* best_to = search_best_state(ctx->lattice_index[step],

@@ -45,8 +45,8 @@ public:
    *                              the learning process).
    *  @return     decode_result_t The decode result.
    */
-  decode_result_t decode(const dependency_t* input,
-      const action_sequence_t& gold_actions, const graph_t* graph );
+  decode_result_t decode(const dependency_t* input, const dependency_t* gold,
+      const action_sequence_t& gold_actions, const graph_t* graph, std::vector<int>& out_of_beam);
 
   void set_pos_alphabet(Engine::TokenAlphabet* pos_alphabet);
 

@@ -95,8 +95,10 @@ private:
   std::vector< ScoreMap<BigramMetaFeature>  > bscore_repo;
   std::vector< ScoreMap<TrigramMetaFeature> > tscore_repo;
   std::vector< ScoreMap<FourgramMetaFeature> > foscore_repo;
-
+	void lookahead_features_bigram(const option_t& opts);
+	void lookahead_features_trigram(const option_t& opts);
 	void standard_features(const option_t& opts);
+	void add_bracket_quote_features(const option_t& opts);
 
 public:
   Ngram* ngram;
